@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use HasFactory, Notifiable, TwoFactorAuthenticatable, HasApiTokens;
 
     /**
      * The attributes that are mass assignable.
@@ -22,6 +23,12 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'cargo',
+        'salario',
+        'jornada_inicio_1',
+        'jornada_fim_1',
+        'jornada_inicio_2',
+        'jornada_fim_2',
     ];
 
     /**
@@ -47,6 +54,12 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'salario' => 'decimal:2',
         ];
+    }
+
+    public function registrosPonto()
+    {
+        return $this->hasMany(RegistroPonto::class);
     }
 }
