@@ -4,10 +4,6 @@ use App\Http\Controllers\HorasExtrasController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/teste', function () {
-    return Inertia::render('teste');
-})->name('teste');
-
 Route::middleware('auth')->group(function () {
 
     // Página principal

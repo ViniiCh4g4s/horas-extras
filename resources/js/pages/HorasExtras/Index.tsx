@@ -5,6 +5,7 @@ import {
     Clock,
     DollarSign,
     Edit2,
+    LogOut,
     Plus,
     Save,
     Trash2,
@@ -654,6 +655,13 @@ export default function Index({ dados: dadosInicial, registros: registrosInicial
                                 </p>
                             </div>
                         </div>
+                        <button
+                            onClick={() => router.post('/logout')}
+                            className="flex items-center gap-2 rounded-lg bg-red-100 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-200"
+                        >
+                            <LogOut size={16} />
+                            Sair
+                        </button>
                     </div>
 
                     {/* Dados do Funcionário */}
@@ -836,10 +844,10 @@ export default function Index({ dados: dadosInicial, registros: registrosInicial
                                             .replace('.', ',')}
                                     </p>
                                     <p className="mt-2 text-xs text-gray-500">
-                                        Jornada: {dados.jornadaInicio1} -{' '}
-                                        {dados.jornadaFim1} |{' '}
-                                        {dados.jornadaInicio2} -{' '}
-                                        {dados.jornadaFim2}
+                                        Jornada: {dados.jornadaInicio1?.substring(0, 5)} -{' '}
+                                        {dados.jornadaFim1?.substring(0, 5)} |{' '}
+                                        {dados.jornadaInicio2?.substring(0, 5)} -{' '}
+                                        {dados.jornadaFim2?.substring(0, 5)}
                                     </p>
                                 </div>
                                 <button
@@ -1724,9 +1732,9 @@ export default function Index({ dados: dadosInicial, registros: registrosInicial
                                             name: string,
                                         ) => {
                                             if (name === 'horas')
-                                                return `${value.toFixed(2)}h`;
+                                                return `${Number(value).toFixed(2)}h`;
                                             if (name === 'valor')
-                                                return `R$ ${value.toFixed(2)}`;
+                                                return `R$ ${Number(value).toFixed(2)}`;
                                             return value;
                                         }}
                                     />
@@ -1792,9 +1800,9 @@ export default function Index({ dados: dadosInicial, registros: registrosInicial
                                             name: string,
                                         ) => {
                                             if (name === 'horas')
-                                                return `${value.toFixed(2)}h`;
+                                                return `${Number(value).toFixed(2)}h`;
                                             if (name === 'valor')
-                                                return `R$ ${value.toFixed(2)}`;
+                                                return `R$ ${Number(value).toFixed(2)}`;
                                             return value;
                                         }}
                                     />

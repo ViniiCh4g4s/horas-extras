@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
 import { request } from '@/routes/password';
+import { register } from '@/routes';
 import { Form, Head } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
+import { Calculator, LoaderCircle } from 'lucide-react';
 
 interface LoginProps {
     status?: string;
@@ -18,10 +19,16 @@ interface LoginProps {
 export default function Login({ status, canResetPassword }: LoginProps) {
     return (
         <AuthLayout
-            title="Entre na sua conta"
-            description="Digite seu e-mail e senha abaixo para fazer login"
+            title="Sistema de Horas Extras"
+            description="Controle e calcule suas horas extras de forma simples e eficiente"
         >
-            <Head title="Conecte-se" />
+            <Head title="Login - Horas Extras" />
+
+            <div className="mb-6 flex justify-center">
+                <div className="rounded-full bg-indigo-100 p-4">
+                    <Calculator className="h-10 w-10 text-indigo-600" />
+                </div>
+            </div>
 
             <Form
                 {...AuthenticatedSessionController.store.form()}
@@ -82,7 +89,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
                             <Button
                                 type="submit"
-                                className="mt-4 w-full"
+                                className="mt-4 w-full bg-indigo-600 hover:bg-indigo-700"
                                 tabIndex={4}
                                 disabled={processing}
                                 data-test="login-button"
@@ -94,12 +101,12 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                             </Button>
                         </div>
 
-                        {/*<div className="text-center text-sm text-muted-foreground">*/}
-                        {/*    Don't have an account?{' '}*/}
-                        {/*    <TextLink href={register()} tabIndex={5}>*/}
-                        {/*        Inscrever-se*/}
-                        {/*    </TextLink>*/}
-                        {/*</div>*/}
+                        <div className="text-center text-sm text-muted-foreground">
+                            Não tem uma conta?{' '}
+                            <TextLink href={register()} tabIndex={6} className="font-medium text-indigo-600 hover:text-indigo-500">
+                                Criar conta
+                            </TextLink>
+                        </div>
                     </>
                 )}
             </Form>

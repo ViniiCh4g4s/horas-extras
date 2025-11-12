@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         // Só cria o admin fora do ambiente de testes
         if (!App::environment('testing')) {
             $this->createAdminUser();
+            $this->call(RegistrosPontoSeeder::class);
         }
     }
 
