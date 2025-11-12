@@ -12,10 +12,10 @@ class RegistrosPontoSeeder extends Seeder
      */
     public function run(): void
     {
-        $user = User::where('email', 'admin@example.com')->first();
+        $user = User::where('email', 'viniciuschagas1008@outlook.com')->first();
 
         if (!$user) {
-            $this->command->error('User admin@example.com not found. Run DatabaseSeeder first.');
+            $this->command->error('User viniciuschagas1008@outlook.com not found. Run DatabaseSeeder first.');
             return;
         }
 
