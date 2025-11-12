@@ -1,3 +1,4 @@
+import { router } from '@inertiajs/react';
 import {
     Calculator,
     Calendar,
@@ -24,9 +25,9 @@ import {
 
 interface Periodo {
     id: string;
-    dataEntrada: string;
+    data_entrada: string;
     entrada: string;
-    dataSaida: string;
+    data_saida: string;
     saida: string;
 }
 
@@ -47,76 +48,51 @@ interface DadosFuncionario {
     jornadaFim2: string;
 }
 
-export default function CalculadoraHorasExtras() {
+interface PageProps {
+    dados: DadosFuncionario;
+    registros: RegistroPonto[];
+}
+
+export default function Index({ dados: dadosInicial, registros: registrosInicial }: PageProps) {
     const [dados, setDados] = useState<DadosFuncionario>({
-        nome: '',
-        cargo: '',
-        salario: 0,
-        jornadaInicio1: '08:00',
-        jornadaFim1: '12:00',
-        jornadaInicio2: '13:00',
-        jornadaFim2: '17:48',
+        nome: dadosInicial?.nome || '',
+        cargo: dadosInicial?.cargo || '',
+        salario: Number(dadosInicial?.salario) || 0,
+        jornadaInicio1: dadosInicial?.jornadaInicio1 || '08:00',
+        jornadaFim1: dadosInicial?.jornadaFim1 || '12:00',
+        jornadaInicio2: dadosInicial?.jornadaInicio2 || '13:00',
+        jornadaFim2: dadosInicial?.jornadaFim2 || '17:48',
     });
 
-    const [registros, setRegistros] = useState<RegistroPonto[]>([]);
+    const registros = registrosInicial || [];
     const [mostrarFormulario, setMostrarFormulario] = useState(false);
-    const [editando, setEditando] = useState(false);
-    const [registroEditando, setRegistroEditando] = useState<string | null>(
-        null,
-    );
-    const [trimestreSelecionado, setTrimestreSelecionado] = useState<number>(0); // 0=todos, 1-4=trimestres
+    const [editando, setEditando] = useState(!dadosInicial?.nome);
+    const [registroEditando, setRegistroEditando] = useState<string | null>(null);
+    const [trimestreSelecionado, setTrimestreSelecionado] = useState<number>(0);
 
-    const [novoRegistro, setNovoRegistro] = useState<RegistroPonto>({
+    const [novoRegistro, setNovoRegistro] = useState<any>({
         id: '',
         data: new Date().toISOString().split('T')[0],
         periodos: [
             {
                 id: '1',
-                dataEntrada: new Date().toISOString().split('T')[0],
+                data_entrada: new Date().toISOString().split('T')[0],
                 entrada: '',
-                dataSaida: new Date().toISOString().split('T')[0],
+                data_saida: new Date().toISOString().split('T')[0],
                 saida: '',
             },
         ],
         observacao: '',
     });
 
-    // Carregar dados do localStorage
-    useEffect(() => {
-        const dadosSalvos = localStorage.getItem('dadosFuncionario');
-        const registrosSalvos = localStorage.getItem('registrosPonto');
-
-        if (dadosSalvos) {
-            setDados(JSON.parse(dadosSalvos));
-            setEditando(false);
-        } else {
-            setEditando(true);
-        }
-
-        if (registrosSalvos) {
-            setRegistros(JSON.parse(registrosSalvos));
-        }
-    }, []);
-
-    // Salvar dados no localStorage
-    const salvarDados = () => {
-        localStorage.setItem('dadosFuncionario', JSON.stringify(dados));
-        localStorage.setItem('registrosPonto', JSON.stringify(registros));
-    };
-
-    useEffect(() => {
-        salvarDados();
-    }, [dados, registros]);
-
     // Auto-selecionar trimestre atual ao carregar registros pela primeira vez
     useEffect(() => {
         if (registros.length > 0 && trimestreSelecionado === 0) {
             const hoje = new Date().toISOString().split('T')[0];
             const { trimestre } = obterTrimestre(hoje);
-            // Comentado para não auto-selecionar, deixar usuário escolher
-            // setTrimestreSelecionado(trimestre);
+            setTrimestreSelecionado(trimestre);
         }
-    }, [registros]);
+    }, [registros.length]);
 
     // Determinar qual trimestre uma data pertence (baseado em ciclos de 21 a 20)
     const obterTrimestre = (
@@ -325,15 +301,15 @@ export default function CalculadoraHorasExtras() {
 
         registro.periodos.forEach((periodo) => {
             totalTrabalhado += calcularHorasPeriodo(
-                periodo.dataEntrada,
+                periodo.data_entrada,
                 periodo.entrada,
-                periodo.dataSaida,
+                periodo.data_saida,
                 periodo.saida,
             );
             totalMinutosNoturnos += calcularMinutosNoturnos(
-                periodo.dataEntrada,
+                periodo.data_entrada,
                 periodo.entrada,
-                periodo.dataSaida,
+                periodo.data_saida,
                 periodo.saida,
             );
         });
@@ -442,42 +418,36 @@ export default function CalculadoraHorasExtras() {
             return;
         }
 
-        // Criar novo registro
-        const registro: RegistroPonto = {
-            ...novoRegistro,
-            id: Date.now().toString(),
-        };
-
-        setRegistros(
-            [...registros, registro].sort(
-                (a, b) =>
-                    new Date(b.data).getTime() - new Date(a.data).getTime(),
-            ),
-        );
-
-        // Resetar formulário
-        setNovoRegistro({
-            id: '',
-            data: new Date().toISOString().split('T')[0],
-            periodos: [
-                {
-                    id: '1',
-                    data: new Date().toISOString().split('T')[0],
-                    entrada: '',
-                    saida: '',
-                },
-            ],
-            observacao: '',
+        // Enviar para o backend
+        router.post('/horas-extras/registros', novoRegistro, {
+            preserveScroll: true,
+            onSuccess: () => {
+                // Resetar formulário
+                const hoje = new Date().toISOString().split('T')[0];
+                setNovoRegistro({
+                    id: '',
+                    data: hoje,
+                    periodos: [
+                        {
+                            id: '1',
+                            data_entrada: hoje,
+                            entrada: '',
+                            data_saida: hoje,
+                            saida: '',
+                        },
+                    ],
+                    observacao: '',
+                });
+                setMostrarFormulario(false);
+                setRegistroEditando(null);
+            },
         });
-
-        setMostrarFormulario(false);
-        setRegistroEditando(null);
     };
 
     const adicionarPeriodo = () => {
         const ultimoPeriodo =
             novoRegistro.periodos[novoRegistro.periodos.length - 1];
-        const novaDataEntrada = ultimoPeriodo?.dataSaida || novoRegistro.data;
+        const novaDataEntrada = ultimoPeriodo?.data_saida || novoRegistro.data;
 
         setNovoRegistro({
             ...novoRegistro,
@@ -485,9 +455,9 @@ export default function CalculadoraHorasExtras() {
                 ...novoRegistro.periodos,
                 {
                     id: Date.now().toString(),
-                    dataEntrada: novaDataEntrada,
+                    data_entrada: novaDataEntrada,
                     entrada: '',
-                    dataSaida: novaDataEntrada,
+                    data_saida: novaDataEntrada,
                     saida: '',
                 },
             ],
@@ -507,7 +477,7 @@ export default function CalculadoraHorasExtras() {
 
     const atualizarPeriodo = (
         periodoId: string,
-        campo: 'dataEntrada' | 'entrada' | 'dataSaida' | 'saida',
+        campo: 'data_entrada' | 'entrada' | 'data_saida' | 'saida',
         valor: string,
     ) => {
         setNovoRegistro({
@@ -532,16 +502,16 @@ export default function CalculadoraHorasExtras() {
                 periodos: [
                     {
                         id: '1',
-                        dataEntrada: novaData,
+                        data_entrada: novaData,
                         entrada: dados.jornadaInicio1,
-                        dataSaida: novaData,
+                        data_saida: novaData,
                         saida: dados.jornadaFim1,
                     },
                     {
                         id: '2',
-                        dataEntrada: novaData,
+                        data_entrada: novaData,
                         entrada: dados.jornadaInicio2,
-                        dataSaida: novaData,
+                        data_saida: novaData,
                         saida: dados.jornadaFim2,
                     },
                 ],
@@ -552,8 +522,8 @@ export default function CalculadoraHorasExtras() {
                 data: novaData,
                 periodos: novoRegistro.periodos.map((p) => ({
                     ...p,
-                    dataEntrada: novaData,
-                    dataSaida: novaData,
+                    data_entrada: novaData,
+                    data_saida: novaData,
                 })),
             });
         }
@@ -574,9 +544,9 @@ export default function CalculadoraHorasExtras() {
             periodos: [
                 {
                     id: '1',
-                    dataEntrada: hoje,
+                    data_entrada: hoje,
                     entrada: '',
-                    dataSaida: hoje,
+                    data_saida: hoje,
                     saida: '',
                 },
             ],
@@ -591,26 +561,23 @@ export default function CalculadoraHorasExtras() {
             return;
         }
 
-        // Atualizar o registro existente
-        setRegistros(
-            registros
-                .map((r) => (r.id === registroEditando ? novoRegistro : r))
-                .sort(
-                    (a, b) =>
-                        new Date(b.data).getTime() - new Date(a.data).getTime(),
-                ),
-        );
-
-        cancelarEdicao();
+        // Enviar atualização para o backend
+        router.put(`/horas-extras/registros/${registroEditando}`, novoRegistro, {
+            preserveScroll: true,
+            onSuccess: () => {
+                cancelarEdicao();
+            },
+        });
     };
 
     const removerRegistro = (id: string) => {
         if (confirm('Deseja realmente remover este registro?')) {
-            setRegistros(registros.filter((r) => r.id !== id));
+            router.delete(`/horas-extras/registros/${id}`, {
+                preserveScroll: true,
+            });
         }
     };
 
-    const totais = calcularTotais();
     const registrosFiltrados = filtrarRegistrosPorTrimestre();
     const totaisFiltrados = (() => {
         // Recalcular totais com registros filtrados
@@ -831,7 +798,20 @@ export default function CalculadoraHorasExtras() {
                                         );
                                         return;
                                     }
-                                    setEditando(false);
+                                    router.post('/horas-extras/dados', {
+                                        nome: dados.nome,
+                                        cargo: dados.cargo,
+                                        salario: dados.salario,
+                                        jornadaInicio1: dados.jornadaInicio1,
+                                        jornadaFim1: dados.jornadaFim1,
+                                        jornadaInicio2: dados.jornadaInicio2,
+                                        jornadaFim2: dados.jornadaFim2,
+                                    }, {
+                                        preserveScroll: true,
+                                        onSuccess: () => {
+                                            setEditando(false);
+                                        },
+                                    });
                                 }}
                                 className="w-full rounded-lg bg-indigo-600 py-3 text-base font-medium text-white transition-colors hover:bg-indigo-700"
                             >
@@ -851,7 +831,7 @@ export default function CalculadoraHorasExtras() {
                                     </p>
                                     <p className="mt-1 text-sm text-gray-600">
                                         Salário: R${' '}
-                                        {dados.salario
+                                        {(dados.salario || 0)
                                             .toFixed(2)
                                             .replace('.', ',')}
                                     </p>
@@ -876,43 +856,42 @@ export default function CalculadoraHorasExtras() {
                     )}
                 </div>
 
-                {/* Abas de Trimestres */}
+                {/* Seletor de Trimestres */}
                 {!editando && registros.length > 0 && (
-                    <div className="mb-6 overflow-x-auto rounded-xl bg-white p-4 shadow-lg">
-                        <div className="flex min-w-max gap-2">
-                            <button
-                                onClick={() => setTrimestreSelecionado(0)}
-                                className={`min-h-[48px] rounded-lg px-5 py-3 font-semibold whitespace-nowrap transition-colors ${
-                                    trimestreSelecionado === 0
-                                        ? 'bg-indigo-600 text-white shadow-md'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                }`}
+                    <div className="mb-6 rounded-xl bg-white p-4 shadow-lg">
+                        <label className="mb-2 block text-sm font-semibold text-gray-700">
+                            Filtrar por período
+                        </label>
+                        <div className="relative">
+                            <select
+                                value={trimestreSelecionado}
+                                onChange={(e) =>
+                                    setTrimestreSelecionado(
+                                        parseInt(e.target.value),
+                                    )
+                                }
+                                className="min-h-[52px] w-full cursor-pointer appearance-none rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-base font-medium transition-colors hover:border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500"
+                                style={{
+                                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                                    backgroundRepeat: 'no-repeat',
+                                    backgroundPosition: 'right 0.75rem center',
+                                    backgroundSize: '1.5em 1.5em',
+                                }}
                             >
-                                Todos
-                            </button>
-                            {[1, 2, 3, 4].map((trim) => {
-                                const info = obterInfoTrimestre(trim);
-                                return (
-                                    <button
-                                        key={trim}
-                                        onClick={() =>
-                                            setTrimestreSelecionado(trim)
-                                        }
-                                        className={`min-h-[48px] rounded-lg px-5 py-3 font-semibold whitespace-nowrap transition-colors ${
-                                            trimestreSelecionado === trim
-                                                ? 'bg-indigo-600 text-white shadow-md'
-                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                        }`}
-                                    >
-                                        <span className="hidden sm:inline">
-                                            {info.label}
-                                        </span>
-                                        <span className="sm:hidden">
-                                            {trim}º Tri
-                                        </span>
-                                    </button>
-                                );
-                            })}
+                                <option value={0}>📊 Todos os períodos</option>
+                                <option value={1}>
+                                    🌱 1º Trimestre (Dez-Mar)
+                                </option>
+                                <option value={2}>
+                                    🌸 2º Trimestre (Mar-Jun)
+                                </option>
+                                <option value={3}>
+                                    ☀️ 3º Trimestre (Jun-Set)
+                                </option>
+                                <option value={4}>
+                                    🍂 4º Trimestre (Set-Dez)
+                                </option>
+                            </select>
                         </div>
 
                         {trimestreSelecionado > 0 && (
@@ -1105,174 +1084,6 @@ export default function CalculadoraHorasExtras() {
                         {/* Gráficos e Estatísticas */}
                         {registrosFiltrados.length > 0 && (
                             <>
-                                {/* Gráfico de Distribuição por Tipo */}
-                                <div className="mb-6 rounded-lg bg-white p-4 shadow">
-                                    <h3 className="mb-4 text-sm font-semibold text-gray-700">
-                                        Distribuição de Horas Extras
-                                    </h3>
-                                    <ResponsiveContainer
-                                        width="100%"
-                                        height={250}
-                                    >
-                                        <BarChart
-                                            data={[
-                                                {
-                                                    name: 'Seg-Sex',
-                                                    horas:
-                                                        totaisFiltrados.horasExtrasSemana /
-                                                        60,
-                                                    valor: totaisFiltrados.valorExtrasSemana,
-                                                    fill: '#22c55e',
-                                                },
-                                                {
-                                                    name: 'Sábado',
-                                                    horas:
-                                                        totaisFiltrados.horasExtrasSabado /
-                                                        60,
-                                                    valor: totaisFiltrados.valorExtrasSabado,
-                                                    fill: '#3b82f6',
-                                                },
-                                                {
-                                                    name: 'Domingo',
-                                                    horas:
-                                                        totaisFiltrados.horasExtrasDomingo /
-                                                        60,
-                                                    valor: totaisFiltrados.valorExtrasDomingo,
-                                                    fill: '#a855f7',
-                                                },
-                                                {
-                                                    name: 'A.N',
-                                                    horas:
-                                                        totaisFiltrados.totalMinutosNoturnos /
-                                                        60,
-                                                    valor: totaisFiltrados.valorAdicionalNoturno,
-                                                    fill: '#f59e0b',
-                                                },
-                                            ]}
-                                        >
-                                            <CartesianGrid strokeDasharray="3 3" />
-                                            <XAxis dataKey="name" />
-                                            <YAxis />
-                                            <Tooltip
-                                                formatter={(
-                                                    value: any,
-                                                    name: string,
-                                                ) => {
-                                                    if (name === 'horas')
-                                                        return `${value.toFixed(2)}h`;
-                                                    if (name === 'valor')
-                                                        return `R$ ${value.toFixed(2)}`;
-                                                    return value;
-                                                }}
-                                            />
-                                            <Legend />
-                                            <Bar dataKey="horas" name="Horas" />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
-
-                                {/* Evolução ao Longo do Tempo */}
-                                <div className="mb-6 rounded-lg bg-white p-4 shadow">
-                                    <h3 className="mb-4 text-sm font-semibold text-gray-700">
-                                        Evolução Temporal
-                                    </h3>
-                                    <ResponsiveContainer
-                                        width="100%"
-                                        height={250}
-                                    >
-                                        <LineChart
-                                            data={registrosFiltrados
-                                                .sort(
-                                                    (a, b) =>
-                                                        new Date(
-                                                            a.data,
-                                                        ).getTime() -
-                                                        new Date(
-                                                            b.data,
-                                                        ).getTime(),
-                                                )
-                                                .map((registro) => {
-                                                    const calc =
-                                                        calcularHorasExtras(
-                                                            registro,
-                                                        );
-                                                    const dataFormatada =
-                                                        new Date(
-                                                            registro.data +
-                                                                'T00:00:00',
-                                                        ).toLocaleDateString(
-                                                            'pt-BR',
-                                                            {
-                                                                day: '2-digit',
-                                                                month: '2-digit',
-                                                            },
-                                                        );
-                                                    const valorHoraNormal =
-                                                        dados.salario / 220;
-                                                    const valorHoraExtra =
-                                                        calc.ehDomingo
-                                                            ? valorHoraNormal *
-                                                              2
-                                                            : valorHoraNormal *
-                                                              1.5;
-                                                    const valorTotal =
-                                                        (calc.horasExtras /
-                                                            60) *
-                                                            valorHoraExtra +
-                                                        calcularAdicionaisNoturnos(
-                                                            calc.minutosNoturnos,
-                                                            valorHoraNormal,
-                                                        ).valorAdicionalNoturno;
-
-                                                    return {
-                                                        data: dataFormatada,
-                                                        horas:
-                                                            calc.horasExtras /
-                                                            60,
-                                                        valor: valorTotal,
-                                                    };
-                                                })}
-                                        >
-                                            <CartesianGrid strokeDasharray="3 3" />
-                                            <XAxis dataKey="data" />
-                                            <YAxis yAxisId="left" />
-                                            <YAxis
-                                                yAxisId="right"
-                                                orientation="right"
-                                            />
-                                            <Tooltip
-                                                formatter={(
-                                                    value: any,
-                                                    name: string,
-                                                ) => {
-                                                    if (name === 'horas')
-                                                        return `${value.toFixed(2)}h`;
-                                                    if (name === 'valor')
-                                                        return `R$ ${value.toFixed(2)}`;
-                                                    return value;
-                                                }}
-                                            />
-                                            <Legend />
-                                            <Line
-                                                yAxisId="left"
-                                                type="monotone"
-                                                dataKey="horas"
-                                                name="Horas Extras"
-                                                stroke="#22c55e"
-                                                strokeWidth={2}
-                                            />
-                                            <Line
-                                                yAxisId="right"
-                                                type="monotone"
-                                                dataKey="valor"
-                                                name="Valor (R$)"
-                                                stroke="#3b82f6"
-                                                strokeWidth={2}
-                                            />
-                                        </LineChart>
-                                    </ResponsiveContainer>
-                                </div>
-
                                 {/* Estatísticas Adicionais */}
                                 <div className="mb-6 rounded-lg bg-white p-4 shadow">
                                     <h3 className="mb-3 text-sm font-semibold text-gray-700">
@@ -1460,12 +1271,12 @@ export default function CalculadoraHorasExtras() {
                                                             <input
                                                                 type="date"
                                                                 value={
-                                                                    periodo.dataEntrada
+                                                                    periodo.data_entrada
                                                                 }
                                                                 onChange={(e) =>
                                                                     atualizarPeriodo(
                                                                         periodo.id,
-                                                                        'dataEntrada',
+                                                                        'data_entrada',
                                                                         e.target
                                                                             .value,
                                                                     )
@@ -1509,12 +1320,12 @@ export default function CalculadoraHorasExtras() {
                                                             <input
                                                                 type="date"
                                                                 value={
-                                                                    periodo.dataSaida
+                                                                    periodo.data_saida
                                                                 }
                                                                 onChange={(e) =>
                                                                     atualizarPeriodo(
                                                                         periodo.id,
-                                                                        'dataSaida',
+                                                                        'data_saida',
                                                                         e.target
                                                                             .value,
                                                                     )
@@ -1726,7 +1537,7 @@ export default function CalculadoraHorasExtras() {
                                                 (periodo, index) => {
                                                     const dataEntFormatada =
                                                         new Date(
-                                                            periodo.dataEntrada +
+                                                            periodo.data_entrada +
                                                                 'T00:00:00',
                                                         ).toLocaleDateString(
                                                             'pt-BR',
@@ -1737,7 +1548,7 @@ export default function CalculadoraHorasExtras() {
                                                         );
                                                     const dataSaiFormatada =
                                                         new Date(
-                                                            periodo.dataSaida +
+                                                            periodo.data_saida +
                                                                 'T00:00:00',
                                                         ).toLocaleDateString(
                                                             'pt-BR',
@@ -1748,9 +1559,9 @@ export default function CalculadoraHorasExtras() {
                                                         );
                                                     const duracao =
                                                         calcularHorasPeriodo(
-                                                            periodo.dataEntrada,
+                                                            periodo.data_entrada,
                                                             periodo.entrada,
-                                                            periodo.dataSaida,
+                                                            periodo.data_saida,
                                                             periodo.saida,
                                                         );
 
@@ -1858,6 +1669,157 @@ export default function CalculadoraHorasExtras() {
                             </p>
                         </div>
                     )}
+
+                {/* Gráficos e Estatísticas */}
+                {registrosFiltrados.length > 0 && (
+                    <>
+                        {/* Gráfico de Distribuição por Tipo */}
+                        <div className="mt-6 mb-6 rounded-lg bg-white p-4 shadow">
+                            <h3 className="mb-4 text-sm font-semibold text-gray-700">
+                                Distribuição de Horas Extras
+                            </h3>
+                            <ResponsiveContainer width="100%" height={250}>
+                                <BarChart
+                                    data={[
+                                        {
+                                            name: 'Seg-Sex',
+                                            horas:
+                                                totaisFiltrados.horasExtrasSemana /
+                                                60,
+                                            valor: totaisFiltrados.valorExtrasSemana,
+                                            fill: '#22c55e',
+                                        },
+                                        {
+                                            name: 'Sábado',
+                                            horas:
+                                                totaisFiltrados.horasExtrasSabado /
+                                                60,
+                                            valor: totaisFiltrados.valorExtrasSabado,
+                                            fill: '#3b82f6',
+                                        },
+                                        {
+                                            name: 'Domingo',
+                                            horas:
+                                                totaisFiltrados.horasExtrasDomingo /
+                                                60,
+                                            valor: totaisFiltrados.valorExtrasDomingo,
+                                            fill: '#a855f7',
+                                        },
+                                        {
+                                            name: 'A.N',
+                                            horas:
+                                                totaisFiltrados.totalMinutosNoturnos /
+                                                60,
+                                            valor: totaisFiltrados.valorAdicionalNoturno,
+                                            fill: '#f59e0b',
+                                        },
+                                    ]}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="name" />
+                                    <YAxis />
+                                    <Tooltip
+                                        formatter={(
+                                            value: any,
+                                            name: string,
+                                        ) => {
+                                            if (name === 'horas')
+                                                return `${value.toFixed(2)}h`;
+                                            if (name === 'valor')
+                                                return `R$ ${value.toFixed(2)}`;
+                                            return value;
+                                        }}
+                                    />
+                                    <Legend />
+                                    <Bar dataKey="horas" name="Horas" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+
+                        {/* Evolução ao Longo do Tempo */}
+                        <div className="mb-6 rounded-lg bg-white p-4 shadow">
+                            <h3 className="mb-4 text-sm font-semibold text-gray-700">
+                                Evolução Temporal
+                            </h3>
+                            <ResponsiveContainer width="100%" height={250}>
+                                <LineChart
+                                    data={registrosFiltrados
+                                        .sort(
+                                            (a, b) =>
+                                                new Date(a.data).getTime() -
+                                                new Date(b.data).getTime(),
+                                        )
+                                        .map((registro) => {
+                                            const calc =
+                                                calcularHorasExtras(registro);
+                                            const dataFormatada = new Date(
+                                                registro.data + 'T00:00:00',
+                                            ).toLocaleDateString('pt-BR', {
+                                                day: '2-digit',
+                                                month: '2-digit',
+                                            });
+                                            const valorHoraNormal =
+                                                dados.salario / 220;
+                                            const valorHoraExtra =
+                                                calc.ehDomingo
+                                                    ? valorHoraNormal * 2
+                                                    : valorHoraNormal * 1.5;
+                                            const valorTotal =
+                                                (calc.horasExtras / 60) *
+                                                    valorHoraExtra +
+                                                calcularAdicionaisNoturnos(
+                                                    calc.minutosNoturnos,
+                                                    valorHoraNormal,
+                                                ).valorAdicionalNoturno;
+
+                                            return {
+                                                data: dataFormatada,
+                                                horas: calc.horasExtras / 60,
+                                                valor: valorTotal,
+                                            };
+                                        })}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="data" />
+                                    <YAxis yAxisId="left" />
+                                    <YAxis
+                                        yAxisId="right"
+                                        orientation="right"
+                                    />
+                                    <Tooltip
+                                        formatter={(
+                                            value: any,
+                                            name: string,
+                                        ) => {
+                                            if (name === 'horas')
+                                                return `${value.toFixed(2)}h`;
+                                            if (name === 'valor')
+                                                return `R$ ${value.toFixed(2)}`;
+                                            return value;
+                                        }}
+                                    />
+                                    <Legend />
+                                    <Line
+                                        yAxisId="left"
+                                        type="monotone"
+                                        dataKey="horas"
+                                        name="Horas Extras"
+                                        stroke="#22c55e"
+                                        strokeWidth={2}
+                                    />
+                                    <Line
+                                        yAxisId="right"
+                                        type="monotone"
+                                        dataKey="valor"
+                                        name="Valor (R$)"
+                                        stroke="#3b82f6"
+                                        strokeWidth={2}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

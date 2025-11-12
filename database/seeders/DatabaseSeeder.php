@@ -4,8 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\{App, Crypt, Hash};
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\{App, Hash};
 
 class DatabaseSeeder extends Seeder
 {
@@ -26,28 +25,19 @@ class DatabaseSeeder extends Seeder
     private function createAdminUser(): void
     {
         // Cria o usuário administrador padrão (ou recupera se já existir)
-        $user = User::firstOrCreate(
-            ['email' => 'admin@admin.com'],
+        User::firstOrCreate(
+            ['email' => 'admin@example.com'],
             [
-                'name'     => 'Vinicius Boschetti',
+                'name'     => 'Administrador',
                 'avatar'   => 'default-1.jpg',
-                'password' => Hash::make('admin@123'),
+                'password' => Hash::make('password'),
+                'cargo'    => 'Desenvolvedor',
+                'salario'  => 5000.00,
+                'jornada_inicio1' => '08:00',
+                'jornada_fim1'    => '12:00',
+                'jornada_inicio2' => '13:00',
+                'jornada_fim2'    => '17:48',
             ]
         );
-
-        // Configura 2FA para ambiente de desenvolvimento
-        $secret = 'JBSWY3DPEHPK3PXP';
-
-        // Gera recovery codes
-        $recoveryCodes = [];
-
-        for ($i = 0; $i < 8; $i++) {
-            $recoveryCodes[] = Str::random(10);
-        }
-
-        $user->two_factor_secret         = Crypt::encrypt($secret);
-        $user->two_factor_recovery_codes = Crypt::encrypt(json_encode($recoveryCodes));
-        $user->two_factor_confirmed_at   = now();
-        $user->save();
     }
 }

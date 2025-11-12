@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('cargo')->nullable();
-            $table->decimal('salario', 10, 2)->default(0);
-            $table->time('jornada_inicio_1')->default('08:00:00');
-            $table->time('jornada_fim_1')->default('12:00:00');
-            $table->time('jornada_inicio_2')->default('13:00:00');
-            $table->time('jornada_fim_2')->default('17:48:00');
+            $table->decimal('salario', 10, 2)->nullable();
+            $table->time('jornada_inicio1')->nullable();
+            $table->time('jornada_fim1')->nullable();
+            $table->time('jornada_inicio2')->nullable();
+            $table->time('jornada_fim2')->nullable();
         });
     }
 
@@ -27,7 +27,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['cargo', 'salario', 'jornada_inicio_1', 'jornada_fim_1', 'jornada_inicio_2', 'jornada_fim_2']);
+            $table->dropColumn(['cargo', 'salario', 'jornada_inicio1', 'jornada_fim1', 'jornada_inicio2', 'jornada_fim2']);
         });
     }
 };

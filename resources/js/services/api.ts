@@ -33,6 +33,11 @@ class ApiService {
     private token: string | null = null;
 
     constructor() {
+        // Configurar headers padrão do axios
+        axios.defaults.headers.common['Accept'] = 'application/json';
+        axios.defaults.headers.common['Content-Type'] = 'application/json';
+        axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+
         this.token = localStorage.getItem('auth_token');
         if (this.token) {
             axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
