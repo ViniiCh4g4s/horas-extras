@@ -27,13 +27,13 @@ class DatabaseSeeder extends Seeder
     {
         // Cria o usuário administrador padrão (ou recupera se já existir)
         User::firstOrCreate(
-            ['email' => 'admin@example.com'],
+            ['email' => 'viniciuschagas1008@outlook.com'],
             [
-                'name'     => 'Administrador',
+                'name'     => 'Vinicius Chagas',
                 'avatar'   => 'default-1.jpg',
-                'password' => Hash::make('password'),
+                'password' => Hash::make('admin@123'),
                 'cargo'    => 'Desenvolvedor',
-                'salario'  => 5000.00,
+                'salario'  => 3118.13,
                 'jornada_inicio1' => '08:00',
                 'jornada_fim1'    => '12:00',
                 'jornada_inicio2' => '13:00',
