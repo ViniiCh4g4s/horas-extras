@@ -70,6 +70,7 @@ export default function Index({ dados: dadosInicial, registros: registrosInicial
     const [editando, setEditando] = useState(!dadosInicial?.nome);
     const [registroEditando, setRegistroEditando] = useState<string | null>(null);
     const [trimestreSelecionado, setTrimestreSelecionado] = useState<number>(0);
+    const [anoSelecionado, setAnoSelecionado] = useState<number>(new Date().getFullYear());
 
     const [novoRegistro, setNovoRegistro] = useState<any>({
         id: '',
@@ -86,12 +87,13 @@ export default function Index({ dados: dadosInicial, registros: registrosInicial
         observacao: '',
     });
 
-    // Auto-selecionar trimestre atual ao carregar registros pela primeira vez
+    // Auto-selecionar trimestre e ano atual ao carregar registros pela primeira vez
     useEffect(() => {
         if (registros.length > 0 && trimestreSelecionado === 0) {
             const hoje = new Date().toISOString().split('T')[0];
-            const { trimestre } = obterTrimestre(hoje);
+            const { trimestre, ano } = obterTrimestre(hoje);
             setTrimestreSelecionado(trimestre);
+            setAnoSelecionado(ano);
         }
     }, [registros.length]);
 
@@ -203,13 +205,13 @@ export default function Index({ dados: dadosInicial, registros: registrosInicial
         };
     };
 
-    // Filtrar registros por trimestre
+    // Filtrar registros por trimestre e ano
     const filtrarRegistrosPorTrimestre = () => {
         if (trimestreSelecionado === 0) return registros;
 
         return registros.filter((registro) => {
-            const { trimestre } = obterTrimestre(registro.data);
-            return trimestre === trimestreSelecionado;
+            const { trimestre, ano } = obterTrimestre(registro.data);
+            return trimestre === trimestreSelecionado && ano === anoSelecionado;
         });
     };
     const horaParaMinutos = (hora: string): number => {
@@ -864,42 +866,75 @@ export default function Index({ dados: dadosInicial, registros: registrosInicial
                     )}
                 </div>
 
-                {/* Seletor de Trimestres */}
+                {/* Seletor de Ano e Trimestres */}
                 {!editando && registros.length > 0 && (
                     <div className="mb-6 rounded-xl bg-white p-4 shadow-lg">
                         <label className="mb-2 block text-sm font-semibold text-gray-700">
                             Filtrar por período
                         </label>
-                        <div className="relative">
-                            <select
-                                value={trimestreSelecionado}
-                                onChange={(e) =>
-                                    setTrimestreSelecionado(
-                                        parseInt(e.target.value),
-                                    )
-                                }
-                                className="min-h-[52px] w-full cursor-pointer appearance-none rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-base font-medium transition-colors hover:border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500"
-                                style={{
-                                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                                    backgroundRepeat: 'no-repeat',
-                                    backgroundPosition: 'right 0.75rem center',
-                                    backgroundSize: '1.5em 1.5em',
-                                }}
-                            >
-                                <option value={0}>📊 Todos os períodos</option>
-                                <option value={1}>
-                                    🌱 1º Trimestre (Dez-Mar)
-                                </option>
-                                <option value={2}>
-                                    🌸 2º Trimestre (Mar-Jun)
-                                </option>
-                                <option value={3}>
-                                    ☀️ 3º Trimestre (Jun-Set)
-                                </option>
-                                <option value={4}>
-                                    🍂 4º Trimestre (Set-Dez)
-                                </option>
-                            </select>
+
+                        {/* Grid com Ano e Trimestre */}
+                        <div className="grid grid-cols-2 gap-3 mb-3">
+                            {/* Seletor de Ano */}
+                            <div className="relative">
+                                <select
+                                    value={anoSelecionado}
+                                    onChange={(e) =>
+                                        setAnoSelecionado(
+                                            parseInt(e.target.value),
+                                        )
+                                    }
+                                    className="min-h-[52px] w-full cursor-pointer appearance-none rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-base font-medium transition-colors hover:border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500"
+                                    style={{
+                                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                                        backgroundRepeat: 'no-repeat',
+                                        backgroundPosition: 'right 0.75rem center',
+                                        backgroundSize: '1.5em 1.5em',
+                                    }}
+                                >
+                                    {[...Array(8)].map((_, i) => {
+                                        const ano = new Date().getFullYear() - 5 + i;
+                                        return (
+                                            <option key={ano} value={ano}>
+                                                📅 {ano}
+                                            </option>
+                                        );
+                                    })}
+                                </select>
+                            </div>
+
+                            {/* Seletor de Trimestre */}
+                            <div className="relative">
+                                <select
+                                    value={trimestreSelecionado}
+                                    onChange={(e) =>
+                                        setTrimestreSelecionado(
+                                            parseInt(e.target.value),
+                                        )
+                                    }
+                                    className="min-h-[52px] w-full cursor-pointer appearance-none rounded-lg border-2 border-gray-200 bg-white px-4 py-3 text-base font-medium transition-colors hover:border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500"
+                                    style={{
+                                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                                        backgroundRepeat: 'no-repeat',
+                                        backgroundPosition: 'right 0.75rem center',
+                                        backgroundSize: '1.5em 1.5em',
+                                    }}
+                                >
+                                    <option value={0}>📊 Todos</option>
+                                    <option value={1}>
+                                        🌱 1º Tri (Dez-Mar)
+                                    </option>
+                                    <option value={2}>
+                                        🌸 2º Tri (Mar-Jun)
+                                    </option>
+                                    <option value={3}>
+                                        ☀️ 3º Tri (Jun-Set)
+                                    </option>
+                                    <option value={4}>
+                                        🍂 4º Tri (Set-Dez)
+                                    </option>
+                                </select>
+                            </div>
                         </div>
 
                         {trimestreSelecionado > 0 && (
@@ -909,7 +944,7 @@ export default function Index({ dados: dadosInicial, registros: registrosInicial
                                         Período:
                                     </span>{' '}
                                     {
-                                        obterInfoTrimestre(trimestreSelecionado)
+                                        obterInfoTrimestre(trimestreSelecionado, anoSelecionado)
                                             .periodo
                                     }
                                 </p>
@@ -918,7 +953,7 @@ export default function Index({ dados: dadosInicial, registros: registrosInicial
                                         Pagamento:
                                     </span>{' '}
                                     {
-                                        obterInfoTrimestre(trimestreSelecionado)
+                                        obterInfoTrimestre(trimestreSelecionado, anoSelecionado)
                                             .dataPagamento
                                     }
                                 </p>
