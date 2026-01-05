@@ -296,6 +296,29 @@ export default function Index({ dados: dadosInicial, registros: registrosInicial
         };
     };
 
+    // Verificar se uma data é feriado
+    const ehFeriado = (dataStr: string): boolean => {
+        const data = new Date(dataStr + 'T00:00:00');
+        const dia = data.getDate();
+        const mes = data.getMonth() + 1; // 0-11, então +1 para 1-12
+
+        // Lista de feriados fixos (dia/mês)
+        const feriadosFixos = [
+            { dia: 1, mes: 1 },   // Ano Novo
+            { dia: 21, mes: 4 },  // Tiradentes
+            { dia: 1, mes: 5 },   // Dia do Trabalho
+            { dia: 7, mes: 9 },   // Independência do Brasil
+            { dia: 12, mes: 10 }, // Nossa Senhora Aparecida
+            { dia: 2, mes: 11 },  // Finados
+            { dia: 15, mes: 11 }, // Proclamação da República
+            { dia: 25, mes: 12 }, // Natal
+        ];
+
+        return feriadosFixos.some(
+            (feriado) => feriado.dia === dia && feriado.mes === mes,
+        );
+    };
+
     // Calcular horas extras de um registro
     const calcularHorasExtras = (registro: RegistroPonto) => {
         // Somar todos os períodos trabalhados
@@ -322,15 +345,18 @@ export default function Index({ dados: dadosInicial, registros: registrosInicial
         const diaSemana = data.getDay();
         const ehSabado = diaSemana === 6;
         const ehDomingo = diaSemana === 0;
+        const ehFeriadoDia = ehFeriado(registro.data);
 
-        // Sábado e domingo: toda hora trabalhada é extra
-        if (ehSabado || ehDomingo) {
+        // Sábado, domingo e feriados: toda hora trabalhada é extra
+        // Feriados são tratados como domingo (2.0x)
+        if (ehSabado || ehDomingo || ehFeriadoDia) {
             return {
                 totalTrabalhado,
                 horasExtras: totalTrabalhado,
                 minutosNoturnos: totalMinutosNoturnos,
                 ehSabado,
-                ehDomingo,
+                ehDomingo: ehDomingo || ehFeriadoDia, // Feriado conta como domingo (2x)
+                ehFeriado: ehFeriadoDia,
                 diaSemana,
             };
         }
@@ -356,6 +382,7 @@ export default function Index({ dados: dadosInicial, registros: registrosInicial
             minutosNoturnos: totalMinutosNoturnos,
             ehSabado: false,
             ehDomingo: false,
+            ehFeriado: false,
             diaSemana,
         };
     };
@@ -1506,11 +1533,13 @@ export default function Index({ dados: dadosInicial, registros: registrosInicial
                                     <div
                                         key={registro.id}
                                         className={`rounded-lg border-2 p-4 transition-colors hover:bg-gray-50 ${
-                                            calc.ehDomingo
-                                                ? 'border-purple-300 bg-purple-50'
-                                                : calc.ehSabado
-                                                  ? 'border-blue-300 bg-blue-50'
-                                                  : 'border-gray-200'
+                                            calc.ehFeriado
+                                                ? 'border-red-300 bg-red-50'
+                                                : calc.ehDomingo
+                                                  ? 'border-purple-300 bg-purple-50'
+                                                  : calc.ehSabado
+                                                    ? 'border-blue-300 bg-blue-50'
+                                                    : 'border-gray-200'
                                         }`}
                                     >
                                         <div className="mb-3 flex items-start justify-between">
@@ -1522,7 +1551,12 @@ export default function Index({ dados: dadosInicial, registros: registrosInicial
                                                 <span className="font-semibold text-gray-800">
                                                     {dataFormatada}
                                                 </span>
-                                                {ehFimDeSemana && (
+                                                {calc.ehFeriado && (
+                                                    <span className="rounded-full bg-red-200 px-2 py-0.5 text-xs font-medium text-red-800">
+                                                        🎉 Feriado (2.0x)
+                                                    </span>
+                                                )}
+                                                {!calc.ehFeriado && ehFimDeSemana && (
                                                     <span
                                                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                                                             calc.ehDomingo
